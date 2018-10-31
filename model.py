@@ -15,10 +15,8 @@ from keras import metrics
 from keras.callbacks import Callback
 from keras.models import save_model
 
-def build_model( img_rows=None, img_cols=None, img_channels=1, output_channels=1, regular_factor=0.00001 ):
-
+def build_model( img_rows=None, img_cols=None, img_channels=1, output_channels=1, regular_factor=0.00001, initializer='he_normal' ):
     original_img_size = ( img_rows, img_cols, img_channels )
-    initializer = "he_normal"
     kr = regularizers.l2( regular_factor )
 
     init = Input( shape=(img_rows, img_cols, img_channels) )
@@ -91,16 +89,7 @@ def build_model( img_rows=None, img_cols=None, img_channels=1, output_channels=1
     last256 = Conv2D(8 , kernel_size=(3, 3), activation='relu', strides=(1,1), padding='same', kernel_regularizer = kr, kernel_initializer = initializer )( l24 )
     last256 = Conv2D(output_channels , kernel_size=(17, 17), activation='sigmoid', strides=(1,1), padding='same', kernel_regularizer = kr, kernel_initializer = initializer, name="gen_256" )( last256 )
 
-    pre_last256 = Conv2D(8 , kernel_size=(3, 3), activation='relu', strides=(1,1), padding='same', kernel_regularizer = kr, kernel_initializer = initializer )( l24 )
-    pre_last256 = Conv2D(output_channels , kernel_size=(17, 17), activation='sigmoid', strides=(1,1), padding='same', kernel_regularizer = kr, kernel_initializer = initializer, name="pre_256" )( pre_last256 )
-
-    normal_model = Model( inputs = init, outputs = [last512, last256, last128, last64, last32, last16, last8, last4] )
-    generator_model = Model( inputs = init, outputs = last512 )
-
-    #final_model = multi_gpu_model( normal_model, gpus=2 )
-    final_model = normal_model
-
-    return (generator_model, final_model)
+    return Model( inputs = init, outputs = [last512, last256, last128, last64, last32, last16, last8, last4] )
 
 if __name__ == '__main__':
     unet, mdcnn = build_model( 1920, 1080, img_channels = 2 )

@@ -42,7 +42,6 @@ def prepare_data( paths, shape, number ):
     random.shuffle( paths )
     output_images = []
     input_images = []
-    #kernel = np.asarray( [[1, 2, 1], [2, -12, 2], [1, 2, 1]], dtype='float32' )
     kernel = np.asarray( [[0, 1, 0], [1, -4, 1], [0, 1, 0]], dtype='float32' )
 
     counter = 0
@@ -57,7 +56,6 @@ def prepare_data( paths, shape, number ):
             break
 
     input_layers = np.asarray( input_images, dtype='float32' ).reshape( (number,)+shape+(1,) )
-    #input_layers = ( input_layers-np.mean(input_layers) ) / (np.var(input_layers) + 1.0e-10)
     input_layers = ( input_layers-np.mean(input_layers) ) / (np.std(input_layers) + 1.0e-10)
 
     output_layers = [np.asarray( output_images, dtype='float32' ), None, None, None, None, None, None, None]
@@ -81,44 +79,35 @@ def prepare_data( paths, shape, number ):
 
     return [input_layers, output_layers]
 
-def train_mdcnn( model_path='./model/mdcnn.h5', image_shape=(512, 512), n_images=1024, epochs=1024, batch_size=8, gpus=0 ):
+def train_mdcnn( model_path='./model/MDCNN-I.h5', image_shape=(512, 512), n_images=1024, epochs=1024, batch_size=8, gpus=0 ):
 
-    #if os.path.isfile( model_path ):
-    #    mdcnn = load_model( model_path )
-    #    print( f'loading MDCNN model from {model_path}' )
-    #else:
-    generator, mdcnn = build_model()
+    if os.path.isfile( model_path ):
+        mdcnn = load_model( model_path )
+        print( f'loading MDCNN model from {model_path}' )
+    else:
+        mdcnn = build_model()
 
     input_layers, output_layers = prepare_data( glob.glob( './images/*/*.jpg'), image_shape, n_images )
     print( f'training dataset generated, with {n_images} input images all of shape {image_shape}' )
 
     tensor_board = TensorBoard(log_dir='./log', histogram_freq=0, write_graph=True, write_images=True)
 
-    #mdcnn = ( mdcnn, multi_gpu_model( mdcnn, gpus=gpus ) )[gpus>0]
     if gpus > 1:
         mdcnn = multi_gpu_model( mdcnn, gpus=gpus )
-    mdcnn.compile( loss='mae', optimizer='adam' )
     print( f'MDCNN-I training with {n_images} images of {epochs} epochs with a batch size {batch_size} and {gpus} GPUs.' )
-    mdcnn.fit( input_layers, output_layers, batch_size=batch_size, epochs=epochs, verbose=1,validation_split=0.125, callbacks=[tensor_board] )
+    mdcnn.compile( loss='mae', optimizer='adam' )
+    mdcnn.fit( input_layers, output_layers, batch_size=batch_size, epochs=epochs>>1, verbose=1,validation_split=0.25, callbacks=[tensor_board] )
+    mdcnn.compile( loss='mae', optimizer='adam', loss_weights=[9.0e-1, 9.0e-2, 9.0e-3, 9.0e-4, 9.0e-5, 9.0e-6, 9.0e-7, 9.0e-8] )
+    mdcnn.fit( input_layers, output_layers, batch_size=batch_size, epochs=epochs>>1, verbose=1,validation_split=0.25, callbacks=[tensor_board] )
     mdcnn.save( model_path )
 
-    #generator = ( generator, multi_gpu_model( generator, gpus=gpus ) )[gpus>0]
-    if gpus > 1:
-        generator = multi_gpu_model( generator, gpus=gpus )
-
-    generator.compile( loss='mae', optimizer='adam' )
-    print( f'U-Net-I training with {n_images} images of {epochs} epochs with a batch size {batch_size} and {gpus} GPUs.' )
-    generator.fit( input_layers, output_layers[0], batch_size=batch_size, epochs=epochs, verbose=1,validation_split=0.125, callbacks=[tensor_board] )
-
     groundtruth_output = output_layers[0]
-    generator_output = generator.predict( input_layers )
     mdcnn_output, *_ = mdcnn.predict( input_layers )
-    for idx in range( n_images - (n_images>> 3), n_images ):
+    for idx in range( n_images - (n_images>> 2), n_images ):
         print( f'saving validation images for index {idx}', end='\r' )
-        imsave( f'./validation_images/{idx}_input.jpg', input_layers[idx].reshape( (512, 512) ) )
-        imsave( f'./validation_images/{idx}_ground.jpg', groundtruth_output[idx].reshape( (512, 512) ) )
-        imsave( f'./validation_images/{idx}_generator.jpg', generator_output[idx].reshape( (512, 512) ) )
-        imsave( f'./validation_images/{idx}_mdcnn.jpg', mdcnn_output[idx].reshape( (512, 512) ) )
+        imsave( f'./validation_images/{idx}_input.jpg', input_layers[idx].reshape( image_shape ) )
+        imsave( f'./validation_images/{idx}_ground.jpg', groundtruth_output[idx].reshape( image_shape ) )
+        imsave( f'./validation_images/{idx}_mdcnn.jpg', mdcnn_output[idx].reshape( image_shape ) )
 
 if __name__ == '__main__':
     train_mdcnn( gpus=2, n_images=1024, epochs=128, batch_size=8 )
