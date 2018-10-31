@@ -15,15 +15,15 @@ from keras import metrics
 from keras.callbacks import Callback
 from keras.models import save_model
 
-def build_model( img_rows=None, img_cols=None, img_channel=1, regular_factor=0.00001 ):
+def build_model( img_rows=None, img_cols=None, img_channels=1, output_channels=1, regular_factor=0.00001 ):
 
-    original_img_size = ( img_rows, img_cols, img_channel )
+    original_img_size = ( img_rows, img_cols, img_channels )
     initializer = "he_normal"
     kr = regularizers.l2( regular_factor )
 
-    init = Input( shape=(img_rows, img_cols, img_channel) )
-    init = (Conv2D( 32, kernel_size=(31, 31), activation = "relu", strides = 1, padding="same", kernel_regularizer = kr, kernel_initializer = initializer )( init ) ,init)[img_channel==1]
-    l1 = Conv2D( 64, kernel_size=(7, 7), activation = "relu", strides = 2, padding="same", kernel_regularizer = kr, kernel_initializer = initializer )( init ) # 256
+    init = Input( shape=(img_rows, img_cols, img_channels) )
+    init_ = (Conv2D( 32, kernel_size=(31, 31), activation = "relu", strides = 1, padding="same", kernel_regularizer = kr, kernel_initializer = initializer )( init ) ,init)[img_channels==1]
+    l1 = Conv2D( 64, kernel_size=(7, 7), activation = "relu", strides = 2, padding="same", kernel_regularizer = kr, kernel_initializer = initializer )( init_ ) # 256
     l2 = Conv2D(128, kernel_size=(5, 5), activation= "relu", strides=2, padding='same', kernel_regularizer = kr, kernel_initializer = initializer )( l1 ) # 128
     l3 = Conv2D(192, kernel_size=(3, 3), activation="relu", strides=2, padding='same', kernel_regularizer = kr, kernel_initializer = initializer )( l2 ) # 64
     l4 = Conv2D(256, kernel_size=(3, 3), activation="relu", strides=2, padding='same', kernel_regularizer = kr, kernel_initializer = initializer )( l3 ) # 32
@@ -64,35 +64,35 @@ def build_model( img_rows=None, img_cols=None, img_channel=1, regular_factor=0.0
 
     l25 = Conv2DTranspose(32, kernel_size=(3, 3), activation = "relu", strides=(2,2), padding='same', kernel_regularizer = kr, kernel_initializer = initializer )( l24 ) # 512
     l26 = l25
-    l27 = add( [l26, init] )
+    l27 = add( [l26, init_] )
 
     llast = Conv2D(16 , kernel_size=(3, 3), activation='relu', strides=(1,1), padding='same', kernel_regularizer = kr, kernel_initializer = initializer )( l27 )
     llast = Conv2D(8 , kernel_size=(3, 3), activation='relu', strides=(1,1), padding='same', kernel_regularizer = kr, kernel_initializer = initializer )( llast )
-    last512 = Conv2D(1 , kernel_size=(31, 31), activation='sigmoid', strides=(1,1), padding='same', kernel_regularizer = kr, kernel_initializer = initializer, name="gen_512" )( llast )
+    last512 = Conv2D(output_channels , kernel_size=(31, 31), activation='sigmoid', strides=(1,1), padding='same', kernel_regularizer = kr, kernel_initializer = initializer, name="gen_512" )( llast )
 
     last4 = Conv2D(8 , kernel_size=(3, 3), activation='relu', strides=(1,1), padding='same', kernel_regularizer = kr, kernel_initializer = initializer )( lx4 )
-    last4 = Conv2D(1 , kernel_size=(3, 3), activation='sigmoid', strides=(1,1), padding='same', kernel_regularizer = kr, kernel_initializer = initializer, name="gen_4")( last4 )
+    last4 = Conv2D(output_channels , kernel_size=(3, 3), activation='sigmoid', strides=(1,1), padding='same', kernel_regularizer = kr, kernel_initializer = initializer, name="gen_4")( last4 )
 
     last8 = Conv2D(8 , kernel_size=(3, 3), activation='relu', strides=(1,1), padding='same', kernel_regularizer = kr, kernel_initializer = initializer )( l9 )
-    last8 = Conv2D(1 , kernel_size=(5, 5), activation='sigmoid', strides=(1,1), padding='same', kernel_regularizer = kr, kernel_initializer = initializer, name="gen_8")( last8 )
+    last8 = Conv2D(output_channels , kernel_size=(5, 5), activation='sigmoid', strides=(1,1), padding='same', kernel_regularizer = kr, kernel_initializer = initializer, name="gen_8")( last8 )
 
     last16 = Conv2D(8 , kernel_size=(3, 3), activation='relu', strides=(1,1), padding='same', kernel_regularizer = kr, kernel_initializer = initializer )( l12 )
-    last16 = Conv2D(1 , kernel_size=(5, 5), activation='sigmoid', strides=(1,1), padding='same', kernel_regularizer = kr, kernel_initializer = initializer, name="gen_16")( last16 )
+    last16 = Conv2D(output_channels , kernel_size=(5, 5), activation='sigmoid', strides=(1,1), padding='same', kernel_regularizer = kr, kernel_initializer = initializer, name="gen_16")( last16 )
 
     last32 = Conv2D(8 , kernel_size=(3, 3), activation='relu', strides=(1,1), padding='same', kernel_regularizer = kr, kernel_initializer = initializer )( l15 )
-    last32 = Conv2D(1 , kernel_size=(7, 7), activation='sigmoid', strides=(1,1), padding='same', kernel_regularizer = kr, kernel_initializer = initializer, name="gen_32" )( last32 )
+    last32 = Conv2D(output_channels , kernel_size=(7, 7), activation='sigmoid', strides=(1,1), padding='same', kernel_regularizer = kr, kernel_initializer = initializer, name="gen_32" )( last32 )
 
     last64 = Conv2D(8 , kernel_size=(3, 3), activation='relu', strides=(1,1), padding='same', kernel_regularizer = kr, kernel_initializer = initializer )( l18 )
-    last64 = Conv2D(1 , kernel_size=(9, 9), activation='sigmoid', strides=(1,1), padding='same', kernel_regularizer = kr, kernel_initializer = initializer, name="gen_64" )( last64 )
+    last64 = Conv2D(output_channels , kernel_size=(9, 9), activation='sigmoid', strides=(1,1), padding='same', kernel_regularizer = kr, kernel_initializer = initializer, name="gen_64" )( last64 )
 
     last128 = Conv2D(8 , kernel_size=(3, 3), activation='relu', strides=(1,1), padding='same', kernel_regularizer = kr, kernel_initializer = initializer )( l21 )
-    last128 = Conv2D(1 , kernel_size=(11, 11), activation='sigmoid', strides=(1,1), padding='same', kernel_regularizer = kr, kernel_initializer = initializer, name="gen_128" )( last128 )
+    last128 = Conv2D(output_channels , kernel_size=(11, 11), activation='sigmoid', strides=(1,1), padding='same', kernel_regularizer = kr, kernel_initializer = initializer, name="gen_128" )( last128 )
 
     last256 = Conv2D(8 , kernel_size=(3, 3), activation='relu', strides=(1,1), padding='same', kernel_regularizer = kr, kernel_initializer = initializer )( l24 )
-    last256 = Conv2D(1 , kernel_size=(17, 17), activation='sigmoid', strides=(1,1), padding='same', kernel_regularizer = kr, kernel_initializer = initializer, name="gen_256" )( last256 )
+    last256 = Conv2D(output_channels , kernel_size=(17, 17), activation='sigmoid', strides=(1,1), padding='same', kernel_regularizer = kr, kernel_initializer = initializer, name="gen_256" )( last256 )
 
     pre_last256 = Conv2D(8 , kernel_size=(3, 3), activation='relu', strides=(1,1), padding='same', kernel_regularizer = kr, kernel_initializer = initializer )( l24 )
-    pre_last256 = Conv2D(1 , kernel_size=(17, 17), activation='sigmoid', strides=(1,1), padding='same', kernel_regularizer = kr, kernel_initializer = initializer, name="pre_256" )( pre_last256 )
+    pre_last256 = Conv2D(output_channels , kernel_size=(17, 17), activation='sigmoid', strides=(1,1), padding='same', kernel_regularizer = kr, kernel_initializer = initializer, name="pre_256" )( pre_last256 )
 
     normal_model = Model( inputs = init, outputs = [last512, last256, last128, last64, last32, last16, last8, last4] )
     generator_model = Model( inputs = init, outputs = last512 )
@@ -101,4 +101,9 @@ def build_model( img_rows=None, img_cols=None, img_channel=1, regular_factor=0.0
     final_model = normal_model
 
     return (generator_model, final_model)
+
+if __name__ == '__main__':
+    unet, mdcnn = build_model( 1920, 1080, img_channels = 2 )
+    plot_model(unet, 'unet_model.png', show_shapes=True, rankdir='TB')
+    plot_model(mdcnn, 'mdcnn_model.png', show_shapes=True, rankdir='TB')
 

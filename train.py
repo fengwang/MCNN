@@ -94,13 +94,18 @@ def train_mdcnn( model_path='./model/mdcnn.h5', image_shape=(512, 512), n_images
 
     tensor_board = TensorBoard(log_dir='./log', histogram_freq=0, write_graph=True, write_images=True)
 
-    mdcnn = ( mdcnn, multi_gpu_model( mdcnn, gpus=gpus ) )[gpus>0]
+    #mdcnn = ( mdcnn, multi_gpu_model( mdcnn, gpus=gpus ) )[gpus>0]
+    if gpus > 1:
+        mdcnn = multi_gpu_model( mdcnn, gpus=gpus )
     mdcnn.compile( loss='mae', optimizer='adam' )
     print( f'MDCNN-I training with {n_images} images of {epochs} epochs with a batch size {batch_size} and {gpus} GPUs.' )
     mdcnn.fit( input_layers, output_layers, batch_size=batch_size, epochs=epochs, verbose=1,validation_split=0.125, callbacks=[tensor_board] )
     mdcnn.save( model_path )
 
-    generator = ( generator, multi_gpu_model( generator, gpus=gpus ) )[gpus>0]
+    #generator = ( generator, multi_gpu_model( generator, gpus=gpus ) )[gpus>0]
+    if gpus > 1:
+        generator = multi_gpu_model( generator, gpus=gpus )
+
     generator.compile( loss='mae', optimizer='adam' )
     print( f'U-Net-I training with {n_images} images of {epochs} epochs with a batch size {batch_size} and {gpus} GPUs.' )
     generator.fit( input_layers, output_layers[0], batch_size=batch_size, epochs=epochs, verbose=1,validation_split=0.125, callbacks=[tensor_board] )
