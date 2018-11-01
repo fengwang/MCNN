@@ -96,9 +96,7 @@ def train_mdcnn( model_path='./model/MDCNN-I.h5', image_shape=(512, 512), n_imag
         mdcnn = multi_gpu_model( mdcnn, gpus=gpus )
     print( f'MDCNN-I training with {n_images} images of {epochs} epochs with a batch size {batch_size} and {gpus} GPUs.' )
     mdcnn.compile( loss='mae', optimizer='adam' )
-    mdcnn.fit( input_layers, output_layers, batch_size=batch_size, epochs=epochs>>1, verbose=1,validation_split=0.25, callbacks=[tensor_board] )
-    mdcnn.compile( loss='mae', optimizer='adam', loss_weights=[9.0e-1, 9.0e-2, 9.0e-3, 9.0e-4, 9.0e-5, 9.0e-6, 9.0e-7, 9.0e-8] )
-    mdcnn.fit( input_layers, output_layers, batch_size=batch_size, epochs=epochs>>1, verbose=1,validation_split=0.25, callbacks=[tensor_board] )
+    mdcnn.fit( input_layers, output_layers, batch_size=batch_size, epochs=epochs, verbose=1,validation_split=0.25, callbacks=[tensor_board] )
     mdcnn.save( model_path )
 
     groundtruth_output = output_layers[0]
@@ -106,7 +104,7 @@ def train_mdcnn( model_path='./model/MDCNN-I.h5', image_shape=(512, 512), n_imag
     for idx in range( n_images - (n_images>> 2), n_images ):
         print( f'saving validation images for index {idx}', end='\r' )
         imsave( f'./validation_images/{idx}_input.jpg', input_layers[idx].reshape( image_shape ) )
-        imsave( f'./validation_images/{idx}_ground.jpg', groundtruth_output[idx].reshape( image_shape ) )
+        imsave( f'./validation_images/{idx}_ground_truth.jpg', groundtruth_output[idx].reshape( image_shape ) )
         imsave( f'./validation_images/{idx}_mdcnn.jpg', mdcnn_output[idx].reshape( image_shape ) )
 
 if __name__ == '__main__':
