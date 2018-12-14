@@ -34,8 +34,10 @@ def trim_image_from_path( image_path, shape ):
         image = block_reduce( image, tuple(scaling_ratio), np.mean )
 
     dim_diff = [ (a - b)>>1 for a, b in zip( image.shape, shape ) ]
-    if dim_diff[0] <= 0 or dim_diff[1] <= 0:
+    if dim_diff[0] < 0 or dim_diff[1] < 0:
+        print( f'size too small? dropping image {image_path}' )
         return None
+    print( f'trimmed image {image_path}' )
     return image[dim_diff[0]:dim_diff[0]+shape[0], dim_diff[1]:dim_diff[1]+shape[1]]
 
 def prepare_data( paths, shape, number ):
@@ -46,12 +48,14 @@ def prepare_data( paths, shape, number ):
 
     counter = 0
     for path in paths:
+        print( f'preparing data from {path}', end='\r' )
         trimmed_image = trim_image_from_path(path, shape )
         if trimmed_image is not None:
             print( f'preparing training set from {path} - {counter}/{number}', end='\r' )
             output_images.append(trimmed_image)
             input_images.append( convolve( trimmed_image, kernel, mode='same' ) )
             counter += 1
+            print( f'got an image from {path}', end='\r' )
         if counter == number:
             break
 
@@ -87,7 +91,8 @@ def train_mdcnn( model_path='./model/MDCNN-I.h5', image_shape=(512, 512), n_imag
     else:
         mdcnn = build_model()
 
-    input_layers, output_layers = prepare_data( glob.glob( './images/*/*.jpg'), image_shape, n_images )
+    #input_layers, output_layers = prepare_data( glob.glob( './images/*/*.jpg'), image_shape, n_images )
+    input_layers, output_layers = prepare_data( glob.glob( '/data/mandelbrot/*/*.png'), image_shape, n_images )
     print( f'training dataset generated, with {n_images} input images all of shape {image_shape}' )
 
     tensor_board = TensorBoard(log_dir='./log', histogram_freq=0, write_graph=True, write_images=True)
@@ -96,19 +101,21 @@ def train_mdcnn( model_path='./model/MDCNN-I.h5', image_shape=(512, 512), n_imag
         mdcnn = multi_gpu_model( mdcnn, gpus=gpus )
     print( f'MDCNN-I training with {n_images} images of {epochs} epochs with a batch size {batch_size} and {gpus} GPUs.' )
     mdcnn.compile( loss='mae', optimizer='adam' )
-    mdcnn.fit( input_layers, output_layers, batch_size=batch_size, epochs=epochs>>1, verbose=1,validation_split=0.25, callbacks=[tensor_board] )
-    mdcnn.compile( loss='mae', optimizer='adam', loss_weights=[9.0e-1, 9.0e-2, 9.0e-3, 9.0e-4, 9.0e-5, 9.0e-6, 9.0e-7, 9.0e-8] )
-    mdcnn.fit( input_layers, output_layers, batch_size=batch_size, epochs=epochs>>1, verbose=1,validation_split=0.25, callbacks=[tensor_board] )
+    mdcnn.fit( input_layers, output_layers, batch_size=batch_size, epochs=epochs, verbose=1,validation_split=0.25, callbacks=[tensor_board] )
     mdcnn.save( model_path )
 
     groundtruth_output = output_layers[0]
     mdcnn_output, *_ = mdcnn.predict( input_layers )
-    for idx in range( n_images - (n_images>> 2), n_images ):
+    #for idx in range( n_images - (n_images>> 2), n_images ):
+    for idx in range( n_images ):
+        ground_truth =  groundtruth_output[idx].reshape( image_shape )
+        prediction = mdcnn_output[idx].reshape( image_shape )
+        df = np.sum( np.abs( ground_truth - prediction )) / ( 512.0 * 512.0 )
         print( f'saving validation images for index {idx}', end='\r' )
         imsave( f'./validation_images/{idx}_input.jpg', input_layers[idx].reshape( image_shape ) )
         imsave( f'./validation_images/{idx}_ground.jpg', groundtruth_output[idx].reshape( image_shape ) )
-        imsave( f'./validation_images/{idx}_mdcnn.jpg', mdcnn_output[idx].reshape( image_shape ) )
+        imsave( f'./validation_images/{idx}_mdcnn_{df}.jpg', mdcnn_output[idx].reshape( image_shape ) )
 
 if __name__ == '__main__':
-    train_mdcnn( gpus=2, n_images=1024, epochs=128, batch_size=8 )
+    train_mdcnn( gpus=2, n_images=2048, epochs=4, batch_size=8 )
 
