@@ -5,7 +5,7 @@ os.environ["CUDA_VISIBLE_DEVICES"]="0"
 from keras.layers import Input
 input_3 = Input( (None, None, 3) )
 
-from multidomain_generator import build_model
+from multidomain_wall_mirror_generator import build_model
 generator = build_model( (None, None, 3), output_channels=3 )
 o_512, o_256, o_128 = generator( input_3 )
 
@@ -26,15 +26,15 @@ import numpy as np
 rems = 20 # first few dataset are not used
 dataset_path = '/data2/feng/wall_mirror/520_screens_cameras.npz_1280X7200_scaled_to_0_1.npz'
 dataset = np.load( dataset_path )
-input_1_512, output_3 = dataset['cameras'][rems:], dataset['screens'][rems:]
-loaded_n, *_ = input_1_512.shape
+camera_input_channel_3, screen_output_channel_3 = dataset['cameras'][rems:], dataset['screens'][rems:]
+loaded_n, *_ = screen_output_channel_3.shape
 total = loaded_n - rems
 
 print( f'training data loaded from {dataset_path}' )
 
-input_1_512 = ( input_1_512 - np.amin(input_1_512) ) / ( np.amax(input_1_512) - np.amin(input_1_512) )
-print( 'input_1_512 -- generated' )
-print( 'output_3 -- generated' )
+screen_output_channel_3 = ( screen_output_channel_3 - np.amin(screen_output_channel_3) ) / ( np.amax(screen_output_channel_3) - np.amin(screen_output_channel_3) )
+print( 'screen_output_channel_3 -- generated' )
+print( 'camera_input_channel_3 -- generated' )
 
 # prepare scaled inputs
 from skimage.measure import block_reduce
@@ -44,7 +44,7 @@ def make_block_reduce( input_layers, dim=(2,2), mode=np.mean ):
     stacked_layers = [ block_reduce( image, dim, mode ) for image in input_layers ]
     return np.asarray( stacked_layers, dtype='float32' )
 
-input_1_256 = make_block_reduce( input_1_512 )
+input_1_256 = make_block_reduce( screen_output_channel_3 )
 print( 'input_1_256 -- generated' )
 input_1_128 = make_block_reduce( input_1_256 )
 print( 'input_1_128 -- generated' )
@@ -56,17 +56,22 @@ def normalize( array ):
 #normalize input for each image
 for idx in range( total ):
     for jdx in range( 3 ):
-        output_3[idx, :, :, jdx] = normalize( output_3[idx, :, :, jdx] )
+        camera_input_channel_3[idx, :, :, jdx] = normalize( camera_input_channel_3[idx, :, :, jdx] )
+print( 'training set input normalized' )
+
+import imageio
 
 #experimental data
 def dump_all_images( parent_path, arrays ):
     n, row, col, *_ = arrays.shape
     for idx in range( n ):
-        file_name = f'{parent_path}_idx.png'
+        file_name = f'{parent_path}_{idx}.png'
         imageio.imsave( file_name, arrays[idx] )
+        print( f'{file_name} dumped' )
 
-e_path = '/data2/feng/wall_mirror/520_screens_cameras.npz_1280X7200_scaled_to_0_1.npz'
+e_path = '/data2/feng/wall_mirror/test_data_10_images_screens_cameras.npz'
 e_dataset = np.load( e_path )
+print( f'test camera images {e_path} loaded' )
 e_images = e_dataset['cameras']
 test_camera_images = e_images
 dump_all_images( './wall_mirror/test_camera_', test_camera_images )
@@ -74,7 +79,7 @@ print( 'test camera images dumped' )
 e_data_512_512_3 = e_images
 
 total_test, *_ = test_camera_images.shape
-for idx in range( total ):
+for idx in range( total_test ):
     for jdx in range( 3 ):
         test_camera_images[idx, :, :, jdx] = normalize( test_camera_images[idx, :, :, jdx] )
 print( 'test camera images normalized' )
@@ -85,21 +90,26 @@ print( 'test screen images dumped' )
 
 print( f'test data loaded from {e_path}' )
 
-batch_size = 2
-valid_32 = np.ones( (batch_size, 32, 32, 1) )
-valid_16 = np.ones( (batch_size, 16, 16, 1) )
-valid_8 = np.ones( (batch_size, 8, 8, 1) )
+batch_size = 1
+#valid_32 = np.ones( (batch_size, 32, 32, 1) )
+#valid_16 = np.ones( (batch_size, 16, 16, 1) )
+#valid_8 = np.ones( (batch_size, 8, 8, 1) )
+#fake_32 = np.zeros( (batch_size, 32, 32, 1) )
+#fake_16 = np.zeros( (batch_size, 16, 16, 1) )
+#fake_8 = np.zeros( (batch_size, 8, 8, 1) )
 
-fake_32 = np.zeros( (batch_size, 32, 32, 1) )
-fake_16 = np.zeros( (batch_size, 16, 16, 1) )
-fake_8 = np.zeros( (batch_size, 8, 8, 1) )
+valid_32 = np.ones( (batch_size, 45, 80, 1) )
+valid_16 = np.ones( (batch_size, 22, 40, 1) )
+valid_8 = np.ones( (batch_size, 11, 20, 1) )
+fake_32 = np.zeros( (batch_size, 45, 80, 1) )
+fake_16 = np.zeros( (batch_size, 22, 40, 1) )
+fake_8 = np.zeros( (batch_size, 11, 20, 1) )
 
 iterations = 1024
 
 import keras.backend as K
 from keras.models import load_model
 import os.path
-import imageio
 
 for iteration in range( iterations ):
 
@@ -118,8 +128,8 @@ for iteration in range( iterations ):
     for idx in range( int(total/batch_size) ):
         start = idx * batch_size
         end = start + batch_size
-        input_3 = output_3[start:end, :, :, :]
-        output_512 = input_1_512[start:end, :, :, :]
+        input_3 = camera_input_channel_3[start:end, :, :, :]
+        output_512 = screen_output_channel_3[start:end, :, :, :]
         output_256 = input_1_256[start:end, :, :, :]
         output_128 = input_1_128[start:end, :, :, :]
 

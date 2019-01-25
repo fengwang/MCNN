@@ -2,7 +2,6 @@ from keras import regularizers
 from keras.layers import Input
 from keras.layers import Conv2D, Conv2DTranspose, UpSampling2D
 from keras.activations import sigmoid
-from keras.activations import tanh
 from keras.models import Model
 from keras.layers import BatchNormalization
 from keras.layers import concatenate
@@ -11,7 +10,7 @@ from keras.layers.merge import add
 from keras.layers import AveragePooling2D
 from keras.utils import plot_model
 
-def build_discriminator( input_shape=(None, None, 1), output_channels=1, regular_factor=0.00001, initializer='he_normal', output_activation=tanh ):
+def build_model( input_shape=(None, None, 1), output_channels=1, regular_factor=0.00001, initializer='he_normal', output_activation=sigmoid ):
 
     def make_activation( input_layer ):
         return LeakyReLU(alpha=0.2)(BatchNormalization(momentum=0.8)(input_layer))
@@ -25,11 +24,11 @@ def build_discriminator( input_shape=(None, None, 1), output_channels=1, regular
         return x
 
     def make_output_block( input_layer, twin_channels, kernel_size, output_activation ):
-        channels, output_channels_ = twin_channels
+        channels, output_channels = twin_channels
         x = input_layer
         x = Conv2DTranspose( channels, kernel_size=kernel_size, activation='linear', strides=1, padding='valid', kernel_regularizer = kr, kernel_initializer = initializer )( x )
         x = make_activation( x )
-        x = Conv2D( output_channels_, kernel_size=kernel_size, activation=output_activation, strides=1, padding='valid', kernel_regularizer = kr, kernel_initializer = initializer )( x )
+        x = Conv2D( output_channels, kernel_size=kernel_size, activation=output_activation, strides=1, padding='valid', kernel_regularizer = kr, kernel_initializer = initializer )( x )
         return x
 
     def make_pooling( input_layer ):
@@ -53,25 +52,28 @@ def build_discriminator( input_shape=(None, None, 1), output_channels=1, regular
     kr = regularizers.l2( regular_factor )
     init = Input( input_shape )
 
-    e_512 = make_blocks( init, 64, ((3, 3), (5, 5),(7, 7), (9, 9) )  )
-    e_256 = make_blocks( make_pooling(e_512), 64, ((3, 3), (5, 5), )  )
-    e_128 = make_blocks( make_pooling(e_256), 64, ((3, 3), (5, 5), )  )
-    e_64  = make_blocks( make_pooling(e_128), 64, ((3, 3), (5, 5), )  )
-    e_32  = make_blocks( make_pooling(e_64 ), 128, ((3, 3), (5, 5), )  )
-    e_16  = make_blocks( make_pooling(e_32 ), 128, ((3, 3), (5, 5), )  )
-    e_8   = make_blocks( make_pooling(e_16 ), 128, ((3, 3), (5, 5), )  )
+    e_512 = make_blocks( init, 64, ((3, 3), (5, 5), (7, 7), (9, 9))  )
+    e_256 = make_blocks( make_pooling(e_512), 64, ((3, 3), (5, 5), (7, 7), (9, 9))  )
+    e_128 = make_blocks( make_pooling(e_256), 128, ((3, 3), (5, 5), (7, 7), (9, 9))  )
+    e_64  = make_blocks( make_pooling(e_128), 256, ((3, 3), (5, 5), (7, 7), (9, 9))  )
+    d_64 = e_64
+    d_128 = add( [e_128, make_blocks( make_upsampling(d_64 ), 128, ((3, 3), (5, 5), (7, 7), (9, 9))  )] )
+    d_256 = add( [e_256, make_blocks( make_upsampling(d_128), 64, ((3, 3), (5, 5), (7, 7), (9, 9))  )] )
+    d_512 = add( [e_512, make_blocks( make_upsampling(d_256), 64,  ((3, 3), (5, 5), (7, 7), (9, 9))  )] )
 
-    o_32  = make_output_block( e_32,  (64, output_channels), (3, 3), output_activation=output_activation )
-    o_16  = make_output_block( e_16,  (64, output_channels), (3, 3), output_activation=output_activation )
-    o_8   = make_output_block( e_8,   (64, output_channels), (3, 3), output_activation=output_activation )
+    o_512 = make_output_block( d_512, (64,  output_channels), (9, 9), output_activation=output_activation )
+    o_256 = make_output_block( d_256, (64,  output_channels), (7, 7), output_activation=output_activation )
+    o_128 = make_output_block( d_128, (64,  output_channels), (5, 5), output_activation=output_activation )
 
-    model = Model( inputs = init, outputs = [o_32, o_16, o_8] )
+    model = Model( inputs = init, outputs = [o_512, o_256, o_128] )
     model.summary()
 
     return model
 
 if __name__ == '__main__':
-    #mdcnn = build_discriminator( (512, 512, 2), output_channels = 2 )
-    mdcnn = build_discriminator( (720, 1280, 3), output_channels = 1 )
-    plot_model(mdcnn, 'mdcnn_discriminator.png', show_shapes=True, rankdir='TB')
+    #mdcnn = build_model( (512, 512, 1), output_channels = 1 )
+    #mdcnn = build_model( (512, 512, 33), output_channels = 1 )
+    #mdcnn = build_model( (512, 512, 33), output_channels = 2 )
+    mdcnn = build_model( (1280, 720, 3), output_channels = 3 )
+    plot_model(mdcnn, 'new_mdcnn_model.png', show_shapes=True, rankdir='TB')
 
