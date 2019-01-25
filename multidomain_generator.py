@@ -72,6 +72,8 @@ def build_model( input_shape=(None, None, 1), output_channels=1, regular_factor=
 
 if __name__ == '__main__':
     #mdcnn = build_model( (512, 512, 1), output_channels = 1 )
-    mdcnn = build_model( (512, 512, 33), output_channels = 1 )
+    #mdcnn = build_model( (512, 512, 33), output_channels = 1 )
+    #mdcnn = build_model( (512, 512, 33), output_channels = 2 )
+    mdcnn = build_model( (1280, 720, 3), output_channels = 3 )
     plot_model(mdcnn, 'new_mdcnn_model.png', show_shapes=True, rankdir='TB')
 

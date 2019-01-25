@@ -118,9 +118,9 @@ for iteration in range( iterations ):
         start = idx * batch_size
         end = start + batch_size
         input_33 = output_33[start:end, :, :, :]
-        output_512 = input_1_512[start:end, :, :, :]
-        output_256 = input_1_256[start:end, :, :, :]
-        output_128 = input_1_128[start:end, :, :, :]
+        output_512 = input_512[start:end, :, :, :]
+        output_256 = input_256[start:end, :, :, :]
+        output_128 = input_128[start:end, :, :, :]
 
         fake_512, fake_256, fake_128 = generator.predict( input_33 )
         d_loss_real = discriminator.train_on_batch( output_512, [valid_32, valid_16, valid_8] )

@@ -25,11 +25,11 @@ def build_discriminator( input_shape=(None, None, 1), output_channels=1, regular
         return x
 
     def make_output_block( input_layer, twin_channels, kernel_size, output_activation ):
-        channels, output_channels = twin_channels
+        channels, output_channels_ = twin_channels
         x = input_layer
         x = Conv2DTranspose( channels, kernel_size=kernel_size, activation='linear', strides=1, padding='valid', kernel_regularizer = kr, kernel_initializer = initializer )( x )
         x = make_activation( x )
-        x = Conv2D( output_channels, kernel_size=kernel_size, activation=output_activation, strides=1, padding='valid', kernel_regularizer = kr, kernel_initializer = initializer )( x )
+        x = Conv2D( output_channels_, kernel_size=kernel_size, activation=output_activation, strides=1, padding='valid', kernel_regularizer = kr, kernel_initializer = initializer )( x )
         return x
 
     def make_pooling( input_layer ):
@@ -71,6 +71,6 @@ def build_discriminator( input_shape=(None, None, 1), output_channels=1, regular
     return model
 
 if __name__ == '__main__':
-    mdcnn = build_discriminator( (512, 512, 1), output_channels = 1 )
+    mdcnn = build_discriminator( (512, 512, 2), output_channels = 2 )
     plot_model(mdcnn, 'mdcnn_discriminator.png', show_shapes=True, rankdir='TB')
 
