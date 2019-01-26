@@ -1,3 +1,6 @@
+dataset_path = '/data2/feng/wall_mirror/0-1_512_screens_cameras.npz'
+test_dataset_path = '/data2/feng/wall_mirror/0-1_2_screens_cameras_test_only.npz'
+
 import os
 os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"]="0"
@@ -23,10 +26,9 @@ gan.compile( loss=['mae', 'mae', 'mae', 'mse', 'mse', 'mse'], loss_weights=[100,
 
 # dataset
 import numpy as np
-rems = 20 # first few dataset are not used
-dataset_path = '/data2/feng/wall_mirror/520_screens_cameras.npz_1280X7200_scaled_to_0_1.npz'
+rems = 0 # first few dataset are not used
 dataset = np.load( dataset_path )
-camera_input_channel_3, screen_output_channel_3 = dataset['cameras'][rems:], dataset['screens'][rems:]
+camera_captured_channel_3, screen_output_channel_3 = dataset['cameras'][rems:], dataset['screens'][rems:]
 loaded_n, *_ = screen_output_channel_3.shape
 total = loaded_n - rems
 
@@ -34,7 +36,7 @@ print( f'training data loaded from {dataset_path}' )
 
 screen_output_channel_3 = ( screen_output_channel_3 - np.amin(screen_output_channel_3) ) / ( np.amax(screen_output_channel_3) - np.amin(screen_output_channel_3) )
 print( 'screen_output_channel_3 -- generated' )
-print( 'camera_input_channel_3 -- generated' )
+print( 'camera_captured_channel_3 -- generated' )
 
 # prepare scaled inputs
 from skimage.measure import block_reduce
@@ -49,15 +51,13 @@ print( 'input_1_256 -- generated' )
 input_1_128 = make_block_reduce( input_1_256 )
 print( 'input_1_128 -- generated' )
 
-def normalize( array ):
-    array = ( array - np.mean(array) ) / ( np.std(array) + 1.0e-10 )
+def preprocess_neuralnetwork_input( array ):
+    array = 2.0 * ( array - np.amin(array) ) / ( np.amax(array) - np.amin(array) + 1.0e-10 ) - 1.0
     return array
 
-#normalize input for each image
-for idx in range( total ):
-    for jdx in range( 3 ):
-        camera_input_channel_3[idx, :, :, jdx] = normalize( camera_input_channel_3[idx, :, :, jdx] )
-print( 'training set input normalized' )
+camera_captured_channel_3 = preprocess_neuralnetwork_input( camera_captured_channel_3 )
+
+print( 'training set input preprocess_neuralnetwork_inputd' )
 
 import imageio
 
@@ -69,26 +69,23 @@ def dump_all_images( parent_path, arrays ):
         imageio.imsave( file_name, arrays[idx] )
         print( f'{file_name} dumped' )
 
-e_path = '/data2/feng/wall_mirror/test_data_10_images_screens_cameras.npz'
-e_dataset = np.load( e_path )
-print( f'test camera images {e_path} loaded' )
+e_dataset = np.load( test_dataset_path )
+print( f'test camera images {test_dataset_path} loaded' )
 e_images = e_dataset['cameras']
 test_camera_images = e_images
 dump_all_images( './wall_mirror/test_camera_', test_camera_images )
 print( 'test camera images dumped' )
-e_data_512_512_3 = e_images
 
-total_test, *_ = test_camera_images.shape
-for idx in range( total_test ):
-    for jdx in range( 3 ):
-        test_camera_images[idx, :, :, jdx] = normalize( test_camera_images[idx, :, :, jdx] )
-print( 'test camera images normalized' )
+test_camera_images = preprocess_neuralnetwork_input( test_camera_images )
+test_camera_captured_data = test_camera_images[0:1]
+
+print( 'test camera images preprocess_neuralnetwork_input done' )
 
 test_screen_images = e_dataset['screens']
 dump_all_images( './wall_mirror/test_screens_', test_screen_images )
 print( 'test screen images dumped' )
 
-print( f'test data loaded from {e_path}' )
+print( f'test data loaded from {test_dataset_path}' )
 
 batch_size = 1
 #valid_32 = np.ones( (batch_size, 32, 32, 1) )
@@ -128,23 +125,23 @@ for iteration in range( iterations ):
     for idx in range( int(total/batch_size) ):
         start = idx * batch_size
         end = start + batch_size
-        input_3 = camera_input_channel_3[start:end, :, :, :]
+        input_3 = camera_captured_channel_3[start:end, :, :, :]
         output_512 = screen_output_channel_3[start:end, :, :, :]
         output_256 = input_1_256[start:end, :, :, :]
         output_128 = input_1_128[start:end, :, :, :]
 
-        fake_512, fake_256, fake_128 = generator.predict( input_3 )
         d_loss_real = discriminator.train_on_batch( output_512, [valid_32, valid_16, valid_8] )
-        d_loss_fake = discriminator.train_on_batch( fake_512, [valid_32, valid_16, valid_8] )
+        fake_512, fake_256, fake_128 = generator.predict( input_3 )
+        d_loss_fake = discriminator.train_on_batch( fake_512, [fake_32, fake_16, fake_8] )
         d_loss = np.add( d_loss_real, d_loss_fake ) * 0.5
 
         gan_loss = gan.train_on_batch( input_3, [output_512, output_256, output_128, valid_32, valid_16, valid_8] )
         print( f'iteration: {iteration}/{iterations}: d_loss:{d_loss} and gan_loss:{gan_loss}' )
 
-        e_512, e_256, e_128 = generator.predict( e_data_512_512_3 )
-        dump_all_images( f'./wall_mirror/test_cameras_{iteration}_{idx}_', e_512 )
+        e_512, e_256, e_128 = generator.predict( test_camera_captured_data )
+        dump_all_images( f'./wall_mirror/test_generated_{iteration}_{idx}_', e_512 )
 
-        if idx % 8 == 0:
+        if idx % 32 == 0:
             generator.save( f'./wall_mirror/test_cameras_{iteration}_{idx}.model')
 
     generator.save( generator_model_path )
