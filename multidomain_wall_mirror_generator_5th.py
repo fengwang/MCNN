@@ -60,8 +60,8 @@ def build_model( input_shape=(None, None, 1), output_channels=1, regular_factor=
 
     kr = regularizers.l2( regular_factor )
     init = Input( input_shape )
-
-    e_512 = make_blocks( init, 64, ((3, 3), (5, 5), (7, 7), (9, 9))  )
+    up_init = make_upsampling( init, 64 )
+    e_512 = make_blocks( up_init, 64, ((3, 3), (5, 5), (7, 7), (9, 9))  )
     e_256 = make_blocks( make_pooling(e_512, 64), 64, ((3, 3), (5, 5), (7, 7), (9, 9))  )
     e_128 = make_blocks( make_pooling(e_256, 128), 128, ((3, 3), (5, 5), (7, 7), (9, 9))  )
     e_64  = make_blocks( make_pooling(e_128, 256), 256, ((3, 3), (5, 5), (7, 7), (9, 9))  )
@@ -80,10 +80,7 @@ def build_model( input_shape=(None, None, 1), output_channels=1, regular_factor=
     return model
 
 if __name__ == '__main__':
-    #mdcnn = build_model( (512, 512, 1), output_channels = 1 )
-    #mdcnn = build_model( (512, 512, 33), output_channels = 1 )
-    #mdcnn = build_model( (512, 512, 33), output_channels = 2 )
     #mdcnn = build_model( (1280, 720, 3), output_channels = 3 )
-    mdcnn = build_model( (1280, 720, 3), output_channels = 3 )
-    plot_model(mdcnn, 'new_mdcnn_model.png', show_shapes=True, rankdir='TB')
+    mdcnn = build_model( (640, 360, 3), output_channels = 3 )
+    #plot_model(mdcnn, 'new_mdcnn_model.png', show_shapes=True, rankdir='TB')
 
