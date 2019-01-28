@@ -1,5 +1,5 @@
-dataset_path = '/data2/feng/wall_mirror/0_256_screens_cameras.npz_1280X7200_scaled_to_0_1.npz'
-test_dataset_path = '/data2/feng/wall_mirror/1_256_screens_cameras.npz_1280X7200_scaled_to_0_1.npz'
+dataset_path = '/data2/feng/wall_mirror/wall_mirror_3rd/0_256_screens_cameras.npz_1280X7200_scaled_to_0_1.npz'
+test_dataset_path = '/data2/feng/wall_mirror/wall_mirror_3rd/1_256_screens_cameras.npz_1280X7200_scaled_to_0_1.npz'
 
 import os
 os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
@@ -32,6 +32,8 @@ camera_captured_channel_3, screen_output_channel_3 = dataset['cameras'][rems:], 
 loaded_n, *_ = screen_output_channel_3.shape
 total = loaded_n - rems
 
+camera_input_average = np.sum( camera_captured_channel_3, axis=0 ) / loaded_n
+
 print( f'training data loaded from {dataset_path}' )
 
 screen_output_channel_3 = ( screen_output_channel_3 - np.amin(screen_output_channel_3) ) / ( np.amax(screen_output_channel_3) - np.amin(screen_output_channel_3) )
@@ -51,9 +53,16 @@ print( 'input_1_256 -- generated' )
 input_1_128 = make_block_reduce( input_1_256 )
 print( 'input_1_128 -- generated' )
 
+
 def preprocess_neuralnetwork_input( array ):
     array = 2.0 * ( array - np.amin(array) ) / ( np.amax(array) - np.amin(array) + 1.0e-10 ) - 1.0
     return array
+
+#def preprocess_neuralnetwork_input( arrays ):
+#    #nonlocal camera_input_average
+#    for array in arrays:
+#        array -=  camera_input_average
+#    return arrays
 
 camera_captured_channel_3 = preprocess_neuralnetwork_input( camera_captured_channel_3 )
 
@@ -157,7 +166,7 @@ for iteration in range( iterations ):
     directory = f'./wall_mirror/dump_{iteration}/'
     mkdir( directory )
     print( f'trying to dump test cases for iteration:{iteration}' )
-    e_512_all, *_ = generator.predict( test_camera_captured_images, batch_size=batch_size )
+    e_512_all, *_ = generator.predict( test_camera_captured_images[0:8], batch_size=batch_size )
     dump_all_images( directory + 'dump_', e_512_all )
     print( f'dumped test cases for iteration:{iteration}' )
 

@@ -32,6 +32,8 @@ camera_captured_channel_3, screen_output_channel_3 = dataset['cameras'][rems:], 
 loaded_n, *_ = screen_output_channel_3.shape
 total = loaded_n - rems
 
+camera_input_average = np.sum( camera_captured_channel_3, axis=0 ) / loaded_n
+
 print( f'training data loaded from {dataset_path}' )
 
 screen_output_channel_3 = ( screen_output_channel_3 - np.amin(screen_output_channel_3) ) / ( np.amax(screen_output_channel_3) - np.amin(screen_output_channel_3) )
@@ -51,9 +53,16 @@ print( 'input_1_256 -- generated' )
 input_1_128 = make_block_reduce( input_1_256 )
 print( 'input_1_128 -- generated' )
 
-def preprocess_neuralnetwork_input( array ):
-    array = 2.0 * ( array - np.amin(array) ) / ( np.amax(array) - np.amin(array) + 1.0e-10 ) - 1.0
-    return array
+
+#def preprocess_neuralnetwork_input( array ):
+#    array = 2.0 * ( array - np.amin(array) ) / ( np.amax(array) - np.amin(array) + 1.0e-10 ) - 1.0
+#    return array
+
+def preprocess_neuralnetwork_input( arrays ):
+    #nonlocal camera_input_average
+    for array in arrays:
+        array -=  camera_input_average
+    return arrays
 
 camera_captured_channel_3 = preprocess_neuralnetwork_input( camera_captured_channel_3 )
 
