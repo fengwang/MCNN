@@ -31,8 +31,13 @@ def build_model( input_shape=(None, None, 1), output_channels=1, regular_factor=
         x = Conv2D( output_channels, kernel_size=kernel_size, activation=output_activation, strides=1, padding='valid', kernel_regularizer = kr, kernel_initializer = initializer )( x )
         return x
 
-    def make_pooling( input_layer ):
-        return AveragePooling2D(pool_size=(2, 2))(input_layer)
+    def make_pooling( input_layer, channels ):
+        x = Conv2DTranspose( channels, kernel_size=(3,3), activation='linear', strides=1, padding='valid', kernel_regularizer = kr, kernel_initializer = initializer )( input_layer )
+        x = make_activation( x )
+        x = Conv2D( output_channels, kernel_size=(3,3), activation='linear', strides=2, padding='valid', kernel_regularizer = kr, kernel_initializer = initializer )( x )
+        x = make_activation( x )
+        return x
+        #return AveragePooling2D(pool_size=(2, 2))(input_layer)
 
     def make_upsampling( input_layer, channels ):
         x = Conv2DTranspose( channels, kernel_size=(4,4), activation='linear', strides=2, padding='valid', kernel_regularizer = kr, kernel_initializer = initializer )( input_layer )
@@ -57,9 +62,9 @@ def build_model( input_shape=(None, None, 1), output_channels=1, regular_factor=
     init = Input( input_shape )
 
     e_512 = make_blocks( init, 64, ((3, 3), (5, 5), (7, 7), (9, 9))  )
-    e_256 = make_blocks( make_pooling(e_512), 64, ((3, 3), (5, 5), (7, 7), (9, 9))  )
-    e_128 = make_blocks( make_pooling(e_256), 128, ((3, 3), (5, 5), (7, 7), (9, 9))  )
-    e_64  = make_blocks( make_pooling(e_128), 256, ((3, 3), (5, 5), (7, 7), (9, 9))  )
+    e_256 = make_blocks( make_pooling(e_512, 64), 64, ((3, 3), (5, 5), (7, 7), (9, 9))  )
+    e_128 = make_blocks( make_pooling(e_256, 128), 128, ((3, 3), (5, 5), (7, 7), (9, 9))  )
+    e_64  = make_blocks( make_pooling(e_128, 256), 256, ((3, 3), (5, 5), (7, 7), (9, 9))  )
     d_64 = e_64
     d_128 = add( [e_128, make_blocks( make_upsampling(d_64, 128 ), 128, ((3, 3), (5, 5), (7, 7), (9, 9))  )] )
     d_256 = add( [e_256, make_blocks( make_upsampling(d_128, 64), 64, ((3, 3), (5, 5), (7, 7), (9, 9))  )] )
