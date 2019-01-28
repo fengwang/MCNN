@@ -8,7 +8,7 @@ os.environ["CUDA_VISIBLE_DEVICES"]="0"
 from keras.layers import Input
 input_3 = Input( (None, None, 3) )
 
-from multidomain_wall_mirror_generator import build_model
+from multidomain_wall_mirror_generator_5th import build_model
 generator = build_model( (None, None, 3), output_channels=3 )
 o_512, o_256, o_128 = generator( input_3 )
 
