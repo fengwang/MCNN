@@ -10,11 +10,11 @@ os.environ["CUDA_VISIBLE_DEVICES"]="0"
 from keras.layers import Input
 input_3 = Input( (None, None, 3) )
 
-from multidomain_wall_mirror_generator_5th import build_model
+from multidomain_wall_mirror_generator_7th import build_model
 generator = build_model( (None, None, 3), output_channels=3 )
 o_512, o_256, o_128 = generator( input_3 )
 
-from discriminator import build_discriminator
+from multidomain_wall_mirror_discriminator_7th import build_discriminator
 discriminator = build_discriminator( (None, None, 3), output_channels = 1 )
 from keras.optimizers import Adam
 optimizer = Adam( 0.0002, 0.5 )
@@ -84,7 +84,7 @@ e_dataset = np.load( test_dataset_path )
 print( f'test camera images {test_dataset_path} loaded' )
 e_images = e_dataset['cameras']
 test_camera_captured_images = e_images
-dump_all_images( './wall_mirror/test_camera_', test_camera_captured_images )
+dump_all_images( './wall_mirror/test_camera_', test_camera_captured_images[0:8] )
 print( 'test camera images dumped' )
 
 test_camera_captured_images = preprocess_neuralnetwork_input( test_camera_captured_images )
@@ -93,7 +93,7 @@ test_camera_captured_data = test_camera_captured_images[0:1]
 print( 'test camera images preprocess_neuralnetwork_input done' )
 
 test_screen_images = e_dataset['screens']
-dump_all_images( './wall_mirror/test_screens_', test_screen_images )
+dump_all_images( './wall_mirror/test_screens_', test_screen_images[0:8] )
 print( 'test screen images dumped' )
 
 print( f'test data loaded from {test_dataset_path}' )
@@ -171,8 +171,13 @@ for iteration in range( iterations ):
     directory = f'./wall_mirror/dump_{iteration}/'
     mkdir( directory )
     print( f'trying to dump test cases for iteration:{iteration}' )
-    e_512_all, *_ = generator.predict( test_camera_captured_images[0:8], batch_size=batch_size )
-    dump_all_images( directory + 'dump_', e_512_all )
+    if (iteration+1 % 8) == 0:
+        e_512_all, *_ = generator.predict( test_camera_captured_images, batch_size=batch_size )
+        dump_all_images( directory + 'dump_', e_512_all )
+    else:
+        e_512_all, *_ = generator.predict( test_camera_captured_images[0:8], batch_size=batch_size )
+        dump_all_images( directory + 'dump_', e_512_all )
+
     print( f'dumped test cases for iteration:{iteration}' )
 
     K.clear_session() #<<-- clear
