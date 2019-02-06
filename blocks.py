@@ -68,10 +68,15 @@ def make_resnext_block(input_layer, branches=2, scaler=4):
     all_layers = add( all_layers )
     return add( [all_layers, input_layer] )
 
-def make_dense_block(input_layer, channels, dims=5, kernel_size=(3,3) ):
+def make_dense_block(input_layer, channels, length=5, kernel_size=(3,3) ):
     all_layers = input_layer
-    for idx in range( dims ):
+    for idx in range( length ):
         x = make_block( input_layer=input_layer, channels=channels, kernel_size=kernel_size )
         all_layers = concatenate( [all_layers, x] )
     return all_layers
+
+
+
+
+
 

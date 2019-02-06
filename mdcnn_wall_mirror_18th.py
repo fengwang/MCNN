@@ -101,7 +101,6 @@ def dump_all_images( parent_path, arrays ):
 dump_all_images( f'{storage_path}/test_camera_', test_camera_captured_images[0:8] )
 print( 'test camera images dumped' )
 
-
 test_camera_captured_images = preprocess_neuralnetwork_input( test_camera_captured_images )
 
 print( 'test camera images preprocess_neuralnetwork_input done' )
@@ -110,18 +109,17 @@ test_screen_images = e_dataset['screens']
 dump_all_images( f'{storage_path}/test_screens_', test_screen_images[0:8] )
 print( 'test screen images dumped' )
 
-print( f'test data loaded from {test_dataset_path}' )
-
 import keras.backend as K
 from keras.models import load_model
 import os.path
 from multidomain_wall_mirror_generator_18th import build_model
 from keras.optimizers import Adam
-from keras.optimizers import SGD
-optimizer = Adam()
+#from keras.optimizers import SGD
+#optimizer = Adam(lr=0.0001)
 #optimizer = SGD()
 iterations = 1024
-epochs = 16
+#epochs = 16
+epochs = 8
 batch_size = 2 #single GPU case
 generator_weights_path = f'{storage_path}/g_model.weights'
 from keras.utils import multi_gpu_model
@@ -137,15 +135,19 @@ generator = multi_gpu_model( s_generator, gpus=2 )
 def gen_weights( x, n ):
     return [ (2.0-2.0*x)**m for m in range( n ) ]
 
+import math
 loss_weights = [1.0, 2.0, 4.0, 8.0, 16.0]
 for iteration in range( iterations ):
     #loss_weights = [1.0, 8.0*(1.0 - iteration/iterations), 32.0*(1.0 - iteration/iterations), 128.0*(1.0 - iteration/iterations), 512.0*(1.0 - iteration/iterations)]
     #loss_weights = [1.0, 2.0*(1.0 - iteration/iterations), 4.0*(1.0 - iteration/iterations), 8.0*(1.0 - iteration/iterations), 16.0*(1.0 - iteration/iterations)]
     #generator.compile( loss=['mae', 'mae', 'mae', 'mae', 'mae'], loss_weights=loss_weights, optimizer=optimizer, metrics=['mae',] )
-    generator.compile( loss=['mae', 'mae', 'mae', 'mae', 'mae'], loss_weights=gen_weights( iteration/iterations, 5 ), optimizer=optimizer, metrics=['mae',] )
+    #generator.compile( loss=['mae', 'mae', 'mae', 'mae', 'mae'], loss_weights=gen_weights( iteration/iterations, 5 ), optimizer=optimizer, metrics=['mae',] )
+    optimizer = Adam(lr=0.0005*math.np(-10.0*iteration/iterations))
+    #generator.compile( loss=['mae', 'mae', 'mae', 'mae', 'mae'],  optimizer=optimizer, metrics=['mae',], loss_weights=gen_weights( iteration/iterations, 5 ) )
+    generator.compile( loss=['mae', 'mae', 'mae', 'mae', 'mae'],  optimizer=optimizer, metrics=['mae',], loss_weights=gen_weights( iteration/iterations, 5 ) )
 
     generator.fit( camera_captured_channel_3, [screen_output_channel_3, screen_output_channel_3_256, screen_output_channel_3_128, screen_output_channel_3_64, screen_output_channel_3_32], batch_size=batch_size, epochs=epochs, verbose=1, validation_split=0.0 )
-    #dump_all_images( f'{storage_path}/test_generated_{iteration}_', e_512 )
+
     generator.save( f'{storage_path}/test_cameras_{iteration}.model')
     s_generator.save( model_path )
 
@@ -155,19 +157,16 @@ for iteration in range( iterations ):
     directory = f'{storage_path}/dump_{iteration}/'
     mkdir( directory )
     print( f'trying to dump test cases for iteration:{iteration}' )
+
 #!!! here
     K.clear_session()
     K.set_learning_phase(1)
     generator = load_model( model_path )
     print( f'model reloaded from {model_path}' )
 #!!! here
-    #e_512_all, e_256_all, e_128_all, e_64_all, e_32_all = generator.predict( test_camera_captured_images, batch_size=batch_size )
+
     e_512_all, e_256_all, e_128_all, e_64_all, e_32_all = generator.predict( test_camera_captured_images, batch_size=1 )
     dump_all_images( directory + 'dump_512_', e_512_all )
-    #dump_all_images( directory + 'dump_256_', e_256_all )
-    #dump_all_images( directory + 'dump_128_', e_128_all )
-    #dump_all_images( directory + 'dump_64_', e_64_all )
-    #dump_all_images( directory + 'dump_32_', e_32_all )
     e_512_all, e_256_all, e_128_all, e_64_all, e_32_all = None, None, None, None, None
 
     print( f'dumped test cases for iteration:{iteration}' )
