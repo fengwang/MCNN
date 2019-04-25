@@ -6,6 +6,6 @@ For the first stage of training, MDCNN guarantees quick convergence, then degene
 Example of Usage:
 
 ```python
-# download some images to folder `images` for the training set, size should no less than `512X512`, then train model with
+# download some images to folder `images` as the training set, then train model with
 python3 ./train.py
 ```
