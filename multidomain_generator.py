@@ -12,12 +12,17 @@ from keras.utils import plot_model
 
 from group_norm import GroupNormalization
 
+with_group_normalization=True
+with_batch_normalization=True
+
 def build_model( input_shape=(None, None, 1), output_channels=1, regular_factor=0.00001, initializer='he_normal', output_activation=sigmoid ):
 
     def make_activation( input_layer, groups ):
-        #return LeakyReLU(alpha=0.2)(BatchNormalization(momentum=0.8)(input_layer))
-        return LeakyReLU(alpha=0.2)(GroupNormalization(groups=groups, axis=-1)(input_layer))
-        #return LeakyReLU(alpha=0.2)(input_layer)
+        if with_group_normalization:
+            return LeakyReLU(alpha=0.2)(GroupNormalization(groups=groups, axis=-1)(input_layer))
+        if with_batch_normalization:
+            return LeakyReLU(alpha=0.2)(BatchNormalization(momentum=0.8)(input_layer))
+        return LeakyReLU(alpha=0.2)(input_layer)
 
     def make_block( input_layer, channels, kernel_size=(3,3) ):
         x = input_layer

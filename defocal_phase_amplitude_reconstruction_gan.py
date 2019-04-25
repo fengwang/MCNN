@@ -37,7 +37,7 @@ o_512, o_256, o_128 = generator( input_51 )
 discriminator_input_channels = generator_output_channels
 discriminator_output_channels = 2
 
-from discriminator_se import build_discriminator
+from multidomain_discriminator import build_discriminator
 discriminator = build_discriminator( (None, None, discriminator_input_channels), output_channels = discriminator_output_channels )
 discriminator = multi_gpu_model( discriminator, gpus=2 )
 
