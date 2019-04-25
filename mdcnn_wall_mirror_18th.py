@@ -1,5 +1,3 @@
-# input is of shape ( 360X640 ) -- cameras
-# output is of shape ( 720X1280 ) -- screens
 dataset_path = '/data2/feng/wall_mirror/dataset/set4/0_256_screens_cameras.npz_1280X7200_scaled_to_0_1.npz_flipped_cropped_0_1.npz'
 dataset_path_se = '/data2/feng/wall_mirror/dataset/set4/1_256_screens_cameras.npz_1280X7200_scaled_to_0_1.npz_flipped_cropped_0_1.npz'
 dataset_path_rd = '/data2/feng/wall_mirror/dataset/set4/2_256_screens_cameras.npz_1280X7200_scaled_to_0_1.npz_flipped_cropped_0_1.npz'
@@ -7,8 +5,6 @@ test_dataset_path = '/data2/feng/wall_mirror/dataset/set4/3_256_screens_cameras.
 storage_path = './wall_mirror/training_cache/18th'
 
 import os
-#os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
-#os.environ["CUDA_VISIBLE_DEVICES"]="0"
 
 def mkdir( directory ):
     if not os.path.exists(directory):
@@ -114,12 +110,8 @@ from keras.models import load_model
 import os.path
 from multidomain_wall_mirror_generator_18th import build_model
 from keras.optimizers import Adam
-#from keras.optimizers import SGD
-#optimizer = Adam(lr=0.0001)
-#optimizer = SGD()
-iterations = 1024
-#epochs = 16
-epochs = 8
+iterations = 16
+epochs = 2
 batch_size = 2 #single GPU case
 generator_weights_path = f'{storage_path}/g_model.weights'
 from keras.utils import multi_gpu_model
@@ -130,20 +122,14 @@ if os.path.isfile( model_path ):
 else:
     s_generator = build_model( (None, None, 3), output_channels=3 )
 
-generator = multi_gpu_model( s_generator, gpus=2 )
-
 def gen_weights( x, n ):
     return [ (2.0-2.0*x)**m for m in range( n ) ]
 
 import math
 loss_weights = [1.0, 2.0, 4.0, 8.0, 16.0]
 for iteration in range( iterations ):
-    #loss_weights = [1.0, 8.0*(1.0 - iteration/iterations), 32.0*(1.0 - iteration/iterations), 128.0*(1.0 - iteration/iterations), 512.0*(1.0 - iteration/iterations)]
-    #loss_weights = [1.0, 2.0*(1.0 - iteration/iterations), 4.0*(1.0 - iteration/iterations), 8.0*(1.0 - iteration/iterations), 16.0*(1.0 - iteration/iterations)]
-    #generator.compile( loss=['mae', 'mae', 'mae', 'mae', 'mae'], loss_weights=loss_weights, optimizer=optimizer, metrics=['mae',] )
-    #generator.compile( loss=['mae', 'mae', 'mae', 'mae', 'mae'], loss_weights=gen_weights( iteration/iterations, 5 ), optimizer=optimizer, metrics=['mae',] )
-    optimizer = Adam(lr=0.0005*math.np(-10.0*iteration/iterations))
-    #generator.compile( loss=['mae', 'mae', 'mae', 'mae', 'mae'],  optimizer=optimizer, metrics=['mae',], loss_weights=gen_weights( iteration/iterations, 5 ) )
+    generator = multi_gpu_model( s_generator, gpus=2 )
+    optimizer = Adam(lr=0.0002*math.exp(-10.0*iteration/iterations))
     generator.compile( loss=['mae', 'mae', 'mae', 'mae', 'mae'],  optimizer=optimizer, metrics=['mae',], loss_weights=gen_weights( iteration/iterations, 5 ) )
 
     generator.fit( camera_captured_channel_3, [screen_output_channel_3, screen_output_channel_3_256, screen_output_channel_3_128, screen_output_channel_3_64, screen_output_channel_3_32], batch_size=batch_size, epochs=epochs, verbose=1, validation_split=0.0 )
@@ -158,14 +144,14 @@ for iteration in range( iterations ):
     mkdir( directory )
     print( f'trying to dump test cases for iteration:{iteration}' )
 
-#!!! here
+    #!!! here
     K.clear_session()
     K.set_learning_phase(1)
-    generator = load_model( model_path )
+    s_generator = load_model( model_path )
     print( f'model reloaded from {model_path}' )
-#!!! here
+    #!!! here
 
-    e_512_all, e_256_all, e_128_all, e_64_all, e_32_all = generator.predict( test_camera_captured_images, batch_size=1 )
+    e_512_all, e_256_all, e_128_all, e_64_all, e_32_all = s_generator.predict( test_camera_captured_images, batch_size=1 )
     dump_all_images( directory + 'dump_512_', e_512_all )
     e_512_all, e_256_all, e_128_all, e_64_all, e_32_all = None, None, None, None, None
 
