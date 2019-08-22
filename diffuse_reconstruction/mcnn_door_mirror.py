@@ -70,8 +70,8 @@ test_camera_captured_images = e_dataset['cameras']
 test_camera_captured_images = preprocess_neuralnetwork_input( test_camera_captured_images )
 print( f'testing set input normalized to range [{np.amin(test_camera_captured_images)}, {np.amax(test_camera_captured_images)}]' )
 
-iterations = 128 # weights and learning rate chaning ratio
-epochs = 128 # training epochs per iteration
+iterations = 16 # weights and learning rate chaning ratio
+epochs = 16 # training epochs per iteration
 batch_size = 2 # training batch
 model_path = f'{storage_path}/generator.model'
 
