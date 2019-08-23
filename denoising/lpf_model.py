@@ -56,5 +56,6 @@ def merge_model( denoising_model_path ):
 
 if __name__ == '__main__':
     lpf_model = make_lpf()
+    lpf_model.summary()
     plot_model(lpf_model, 'lpf_model.png', show_shapes=True, rankdir='TB')
 
