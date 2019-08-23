@@ -214,6 +214,9 @@ class DataLoader():
         self.counter = 0
         self.reset_counter = 1
 
+        self.val_counter = 0
+        self.validation_images = fake_images(self.n_images, (row, col), sigmas=(5,50), range_of_columns=(200, 400),max_intensity=5)
+
     def reset( self ):
         row, col = self.img_res
         self.reset_counter += 1
@@ -221,16 +224,15 @@ class DataLoader():
         if reset_counter > 128:
             splitter = 0
         self.batch_images[:splitter, :, :] = gray(splitter, (row, col))
-        self.batch_images[splitter:, :, :] = fake_images(self.n_images-splitter, (row, col), sigmas=(5,50), range_of_columns=(200, 400),max_intensity=self.reset_counter)
+        self.batch_images[splitter:, :, :] = fake_images(self.n_images-splitter, (row, col), sigmas=(5,50), range_of_columns=(200, 400), max_intensity=self.reset_counter)
         np.random.shuffle( self.batch_images )
         self.counter = 0
 
-    def load_data(self, batch_size=3):
+    def load_batch(self, batch_size=3):
         if self.counter + batch_size >= self.n_images:
             self.counter = 0
 
-        imgs_A = []
-        imgs_B = []
+        imgs_A, imgs_B = [], []
 
         for idx in range( self.counter, self.counter+batch_size ):
             img_A = self.batch_images[idx]
@@ -242,32 +244,31 @@ class DataLoader():
         imgs_A = np.array(imgs_A)/255.0
         imgs_B = np.array(imgs_B)/255.0
         self.counter += batch_size
-        return imgs_A, imgs_B
+        return imgs_B, imgs_A
 
-    def load_batch(self, batch_size=1 ):
-        self.n_batches = int(self.n_images / batch_size)
-        for i in range(self.n_batches-1):
-            _batch_images = (self.batch_images)[i*batch_size:(i+1)*batch_size]
+    def load_validation_batch(self, batch_size=1 ):
+        if self.val_counter + batch_size >= self.n_images:
+            self.val_counter = 0
 
-            imgs_A, imgs_B = [], []
-            for image in _batch_images:
-                img_A = image
-                img_B = transform( image=img_A, use_noise=True )
+        imgs_A, imgs_B = [], []
 
-                imgs_A.append(img_A.reshape( (512, 512, 1)) )
-                imgs_B.append(img_B)
+        for idx in range( self.val_counter, self.val_counter+batch_size ):
+            img_A = self.validation_images[idx]
+            img_B = transform( image=img_A, use_noise=True )
 
-            imgs_A = np.array(imgs_A)/255.0
-            imgs_B = np.array(imgs_B)/255.0
+            imgs_A.append(img_A.reshape(img_A.shape+(1,)))
+            imgs_B.append(img_B)
 
-            yield imgs_A, imgs_B
-
+        imgs_A = np.array(imgs_A)/255.0
+        imgs_B = np.array(imgs_B)/255.0
+        self.val_counter += batch_size
+        return imgs_B, imgs_A
 
 import tifffile
 if __name__ == '__main__':
     N = 16
     loader = DataLoader(n_images=N)
-    a, _ = loader.load_data( N )
+    a, _ = loader.load_batch( N )
     b = []
     for idx in range( N ):
         b.append( sim_noise( np.squeeze(a[idx]) ) )

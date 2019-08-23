@@ -10,6 +10,7 @@ from keras.layers import LeakyReLU
 from keras.layers.merge import add
 from keras.layers import AveragePooling2D
 from keras.utils import plot_model
+import keras.backend as K
 
 def build_discriminator( input_shape=(None, None, 1), output_channels=1, regular_factor=0.00001, initializer='he_normal', output_activation=tanh ):
 
@@ -60,11 +61,14 @@ def build_discriminator( input_shape=(None, None, 1), output_channels=1, regular
     o_8   = make_output_block( e_8,   (64, output_channels), (3, 3), output_activation=output_activation )
 
     model = Model( inputs = init, outputs = [o_32, o_16, o_8] )
-    model.summary()
+    #model.summary()
 
     return model
 
 if __name__ == '__main__':
     dis = build_discriminator( (512, 512, 1), output_channels = 1 )
-    plot_model(dis, 'discriminator.png', show_shapes=True, rankdir='TB')
+    #plot_model(dis, 'discriminator.png', show_shapes=True, rankdir='TB')
+    #print( dis.__dict__ )
+    #print( f'this model has {len(dis.outputs)} outputs' )
+    print( f'this model has {dis._feed_input_shapes} inputs' )
 

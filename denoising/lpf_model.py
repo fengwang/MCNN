@@ -1,10 +1,10 @@
 import os
-from tensorflow.python.keras.layers import Input
-from tensorflow.python.keras.layers.convolutional import Conv2D
-from tensorflow.python.keras.models import Model, save_model
-from tensorflow.python.keras.models import load_model
-from tensorflow.python.keras.layers import concatenate
-from tensorflow.python.keras.utils import plot_model
+from keras.layers import Input
+from keras.layers.convolutional import Conv2D
+from keras.models import Model, save_model
+from keras.models import load_model
+from keras.layers import concatenate
+from keras.utils import plot_model
 import numpy as np
 from math import exp
 
@@ -35,14 +35,14 @@ def kernel_gaussian( sigma ):
     kernel = kernel.reshape( (33, 33, 1, 1) )
     return kernel
 
-def merge_model( denoising_model_path ):
+def merge_model( denoising_model_path, output_path ):
     #make lpf
     lpf_model = make_lpf()
     lpf_model.get_layer('uniform_5').set_weights([kernel_uniform(5),])
     lpf_model.get_layer('uniform_7').set_weights([kernel_uniform(7),])
     lpf_model.get_layer('gaussian_20').set_weights([kernel_gaussian(20),])
     lpf_model.get_layer('gaussian_30').set_weights([kernel_gaussian(30),])
-    lpf_model.save( './lpf.model' )
+    lpf_model.save( './lpf.h5' )
 
     denoising_model = load_model( denoising_model_path )
 
@@ -51,8 +51,7 @@ def merge_model( denoising_model_path ):
     denoising = denoising_model( lpf )
 
     merged_model = Model( input, denoising )
-    merged_model.save( '/data/model/saved_model/denoiser_merged_13_any_size.model' )
-    merged_model.save_weights( '/data/model/saved_model/denoiser_merged_13_any_size.weight' )
+    merged_model.save( output_path )
 
 if __name__ == '__main__':
     lpf_model = make_lpf(input_shape=(512, 512, 1))
