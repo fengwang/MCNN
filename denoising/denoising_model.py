@@ -19,9 +19,9 @@ def deconv2d(layer_input, skip_input, filters, f_size=4):
     u = Concatenate()([u, skip_input])
     return u
 
-def build_denoising_model():
+def build_denoising_model(input_shape=(None,None,4)):
 
-    d0 = Input(shape=(None, None, 4))
+    d0 = Input(shape=input_shape)
     d1 = conv2d(d0, 64, bn=False)
     d2 = conv2d(d1, 128)
     d3 = conv2d(d2, 256)
@@ -51,7 +51,8 @@ def build_denoising_model():
     return u_model, mcnn_model
 
 if __name__ == '__main__':
-    u, m = build_denoising_model()
-    plot_model(u, 'denoising_u_model.png', show_shapes=True, rankdir='TB')
-    plot_model(m, 'denoising_m_model.png', show_shapes=True, rankdir='TB')
+    u, m = build_denoising_model(input_shape=(512,512,4))
+    #plot_model(u, 'denoising_u_model.png', show_shapes=True, rankdir='TB')
+    plot_model(m, 'denoising_model.png', show_shapes=True, rankdir='TB')
+    m.summary()
 

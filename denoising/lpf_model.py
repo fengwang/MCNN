@@ -8,8 +8,8 @@ from tensorflow.python.keras.utils import plot_model
 import numpy as np
 from math import exp
 
-def make_lpf():
-    input = Input( (None, None, 1) )
+def make_lpf(input_shape=(None,None,1)):
+    input = Input( input_shape )
     uniform_5_ = Conv2D( 1, kernel_size=(5,5), activation='linear', strides=(1,1), padding='same', name='uniform_5', use_bias=False, trainable=False )
     uniform_5 = uniform_5_( input )
     uniform_7_ = Conv2D( 1, kernel_size=(7,7), activation='linear', strides=(1,1), padding='same', name='uniform_7', use_bias=False, trainable=False )
@@ -55,7 +55,7 @@ def merge_model( denoising_model_path ):
     merged_model.save_weights( '/data/model/saved_model/denoiser_merged_13_any_size.weight' )
 
 if __name__ == '__main__':
-    lpf_model = make_lpf()
+    lpf_model = make_lpf(input_shape=(512, 512, 1))
     lpf_model.summary()
     plot_model(lpf_model, 'lpf_model.png', show_shapes=True, rankdir='TB')
 
