@@ -81,6 +81,6 @@ def build_model( input_shape=(None, None, 1), output_channels=1, regular_factor=
     return model
 
 if __name__ == '__main__':
-    mcnn = build_model( (1280, 720, 3), output_channels = 3 )
-    #mcnn = build_model( (640, 360, 3), output_channels = 3 )
+    #mcnn = build_model( (1280, 720, 3), output_channels = 3 )
+    mcnn = build_model( (640, 360, 3), output_channels = 3 )
 
