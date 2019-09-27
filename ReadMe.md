@@ -6,17 +6,38 @@ This greatly accelerates the convergence and enhances the stability of the neura
 
 ![architectures](./misc/images/mcnn_architecture.jpg)
 
-### quick tutorial
+
+### System Requirement (Training)
+
++ software (python packages)
+    + Python (3.7.4)
+    + Tensorflow (1.14.0)
+    + Keras (2.2.4)
+    + numpy (1.17.0)
+    + openCV (4.1.1)
+    + scikit-image (0.15.0)
+    + tifffile (0.9.2)
+    + imageio (2.0.10)
+    + jupyter-notebook (6.0.1)
+    + mss (4.0.0)
+    + scipy
+    + matplotlib
+
++ recommanded hardware
+    + 2T hard disk space (for simulated dataset)
+    + 256 GB Memory
+    + 2xGTX 1080 Ti GPU
+
+### Demo/Quick Tutorial
 For people who is interested in applying MCNN to their own project, check out the `tutorial` folder.
 
 
-### phase retrieval application
+### Phase retrieval applications
 For the phase retrieval applications, please check out folder `phase_retrieval`;
 
-### imageing objects from diffuse reflection
+### Imageing objects from diffuse reflection
 For the imaging objects from diffusive reflection application, please check out folder `diffuse_reconstruction`;
 
-### denoising STEM images
+### Denoising STEM images
 For the STEM images denoising application, please check out folder `denoising`;
-
 
