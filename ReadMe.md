@@ -20,8 +20,8 @@ This greatly accelerates the convergence and enhances the stability of the neura
     + imageio (2.0.10)
     + jupyter-notebook (6.0.1)
     + mss (4.0.0)
-    + scipy
-    + matplotlib
+    + scipy (1.3.1)
+    + matplotlib (3.1.1)
 
 + recommanded hardware
     + 2T hard disk space (for simulated dataset)
@@ -41,3 +41,6 @@ For the imaging objects from diffusive reflection application, please check out 
 ### Denoising STEM images
 For the STEM images denoising application, please check out folder `denoising`;
 
+
+### License
+GPL
