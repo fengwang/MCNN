@@ -1,5 +1,5 @@
 + Simulated dataset
-    - the simulation program is developed by A. Eljarrat; source code is available at: <https://github.com/AEljarrat/inline_holo>
+    - the simulation program is developed by Alberto; source code is available at: <https://github.com/AEljarrat/inline_holo>
     - simulation example in a jupyter notebook: <https://github.com/AEljarrat/inline_holo/blob/master/Simulated_dataset.ipynb>
     - Feng is responsible for the simulated dataset on request. (very very large dataset)
 
@@ -9,7 +9,7 @@
     + more details about this dataset: <https://doi.org/10.1364/OE.22.010661>
 
 + experimental data in Fig. 3
-    + see to the file `defocused.51.depth.image.npz` in the same folder.
+    + Feng or Alberto is responsible for this dataset on request. (More than 500M, cannot be uploaded here)
     + more details about this dataset: <https://doi.org/10.1364/OE.26.011819>
 
 
