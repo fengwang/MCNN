@@ -48,10 +48,11 @@ def build_denoising_model(input_shape=(None,None,4)):
 
     #u_model     = Model(d0, last_512)
     mcnn_model  = Model(d0, outputs=[last_512, last_256, last_128, last_64, last_32, last_16, last_8])
-    return mcnn_model
+    unet_model = Model( d0,  last_512 )
+    return unet_model, mcnn_model
 
 if __name__ == '__main__':
-    m = build_denoising_model(input_shape=(512,512,4))
+    u, m = build_denoising_model(input_shape=(512,512,4))
     #plot_model(u, 'denoising_u_model.png', show_shapes=True, rankdir='TB')
     plot_model(m, 'denoising_model.png', show_shapes=True, rankdir='TB')
     m.summary()

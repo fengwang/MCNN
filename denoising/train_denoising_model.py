@@ -6,7 +6,7 @@ from lpf_model import merge_model
 from keras.optimizers import Adam
 
 if __name__ == '__main__':
-    mcnn_model = build_denoising_model()
+    unet_model, mcnn_model = build_denoising_model()
     discriminator_model = build_discriminator()
     loader = DataLoader( 2048 )
 
@@ -15,12 +15,13 @@ if __name__ == '__main__':
         'batch_size': 4,
         'optimizer': Adam(lr=0.0001, decay=0.0001),
         'sampling_folder': './sampling',
-        'sampling_interval': 32,
-        'validation_interval': 4
+        'sampling_interval': 512,
+        'validation_interval': 386
     }
 
     mcnn_train(mcnn_model, discriminator_model, loader, config )
 
-    mcnn_model.save( './mcnn_model.h5' )
-    merge_model( './mcnn_model.h5', './denoising_model.h5' )
+    # deserting low frequency branches
+    unet_model.save( './denoising.model' )
+    merge_model( './denoising.model', './denoising_merged.model' )
 
