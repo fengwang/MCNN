@@ -1,6 +1,7 @@
 + Simulated dataset
     - the simulation program is developed by Alberto; source code is available at: <https://github.com/AEljarrat/inline_holo>
     - simulation example in a jupyter notebook: <https://github.com/AEljarrat/inline_holo/blob/master/Simulated_dataset.ipynb>
+    - An example simulation code is demonstrated in `simulate.py` in this folder
     - Feng is responsible for the simulated dataset on request. (very very large dataset)
 
 + experimental data in Fig. 2
