@@ -34,14 +34,14 @@ def build_model( input_shape=(None, None, 1), output_channels=1, regular_factor=
     def make_pooling( input_layer, channels ):
         x = Conv2DTranspose( channels, kernel_size=(3,3), activation='linear', strides=1, padding='valid', kernel_regularizer = kr, kernel_initializer = initializer )( input_layer )
         x = make_activation( x )
-        x = Conv2D( output_channels, kernel_size=(3,3), activation='linear', strides=2, padding='valid', kernel_regularizer = kr, kernel_initializer = initializer )( x )
+        x = Conv2D( channels, kernel_size=(3,3), activation='linear', strides=2, padding='valid', kernel_regularizer = kr, kernel_initializer = initializer )( x )
         x = make_activation( x )
         return x
 
     def make_upsampling( input_layer, channels ):
         x = Conv2DTranspose( channels, kernel_size=(4,4), activation='linear', strides=2, padding='valid', kernel_regularizer = kr, kernel_initializer = initializer )( input_layer )
         x = make_activation( x )
-        x = Conv2D( output_channels, kernel_size=(3,3), activation='linear', strides=1, padding='valid', kernel_regularizer = kr, kernel_initializer = initializer )( x )
+        x = Conv2D( channels, kernel_size=(3,3), activation='linear', strides=1, padding='valid', kernel_regularizer = kr, kernel_initializer = initializer )( x )
         x = make_activation( x )
         return x
 
@@ -78,9 +78,11 @@ def build_model( input_shape=(None, None, 1), output_channels=1, regular_factor=
     model = Model( inputs = init, outputs = [o_1024, o_512, o_256, o_128, o_64] )
     model.summary()
 
-    return model
+    unet = Model( inputs = init, outputs =  o_1024 )
+
+    return model, unet
 
 if __name__ == '__main__':
-    mcnn = build_model( (1280, 720, 3), output_channels = 3 )
-    #mcnn = build_model( (640, 360, 3), output_channels = 3 )
+    #mcnn = build_model( (1280, 720, 3), output_channels = 3 )
+    mcnn, _ = build_model( (640, 360, 3), output_channels = 3 )
 

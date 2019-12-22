@@ -220,7 +220,7 @@ class DataLoader():
     def reset( self ):
         row, col = self.img_res
         self.reset_counter += 1
-        splitter = self.n_images // (self.reset_counter+1)
+        splitter = self.n_images >> 1
         if reset_counter > 128:
             splitter = 0
         self.batch_images[:splitter, :, :] = gray(splitter, (row, col))

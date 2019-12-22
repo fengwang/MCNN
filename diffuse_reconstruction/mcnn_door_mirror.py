@@ -1,7 +1,7 @@
-testing_data_path = '/data2/feng/door_mirror/dataset/set4/0_256_screens_cameras.npz_1280X720_scaled_to_0_1.npz_flipped_cropped_0_1.npz'
-training_set_path = '/data2/feng/door_mirror/dataset/set4/1_256_screens_cameras.npz_1280X720_scaled_to_0_1.npz_flipped_cropped_0_1.npz'
-training_set_path_se = '/data2/feng/door_mirror/dataset/set4/2_256_screens_cameras.npz_1280X720_scaled_to_0_1.npz_flipped_cropped_0_1.npz'
-training_set_path_rd = '/data2/feng/door_mirror/dataset/set4/3_256_screens_cameras.npz_1280X720_scaled_to_0_1.npz_flipped_cropped_0_1.npz'
+testing_data_path = '/raid/feng/wall_mirror/dataset/set4/0_256_screens_cameras.npz_1280X7200_scaled_to_0_1.npz_flipped_cropped_0_1.npz'
+training_set_path = '/raid/feng/wall_mirror/dataset/set4/1_256_screens_cameras.npz_1280X7200_scaled_to_0_1.npz_flipped_cropped_0_1.npz'
+training_set_path_se = '/raid/feng/wall_mirror/dataset/set4/2_256_screens_cameras.npz_1280X7200_scaled_to_0_1.npz_flipped_cropped_0_1.npz'
+training_set_path_rd = '/raid/feng/wall_mirror/dataset/set4/3_256_screens_cameras.npz_1280X7200_scaled_to_0_1.npz_flipped_cropped_0_1.npz'
 storage_path = './door_mirror/training_cache/door_mirror'
 
 import os
@@ -77,7 +77,9 @@ model_path = f'{storage_path}/generator.model'
 
 from mcnn_door_mirror_model import build_model
 from keras.optimizers import Adam
-s_generator = build_model( (None, None, 3), output_channels=3 )
+s_generator, u_net = build_model( (None, None, 3), output_channels=3 )
+s_generator.load_weights( './generator.weights' )
+
 print( 'MCNN model build' )
 
 from keras.utils import multi_gpu_model
@@ -88,13 +90,13 @@ for iteration in range( iterations ):
     optimizer = Adam(lr=0.001*math.exp(-10.0*iteration/iterations)) # [1.0e-3 --> 4.5e-8]
     loss_weights = [ (2.0-2.0*iteration/iterations)**m for m in range( 5 ) ] #
     generator.compile( loss='mae',  optimizer=optimizer, metrics=['mae',], loss_weights=loss_weights )
-    generator.fit( camera_captured_rgb, [screen_output_rgb, screen_output_rgb_256, screen_output_rgb_128, screen_output_rgb_64, screen_output_rgb_32], batch_size=batch_size, epochs=epochs, verbose=1, validation_split=0.125 )
-    generator.save( f'{storage_path}/door_mirror_{iteration}.model')
+    generator.fit( camera_captured_rgb, [screen_output_rgb, screen_output_rgb_256, screen_output_rgb_128, screen_output_rgb_64, screen_output_rgb_32], batch_size=batch_size, epochs=epochs, verbose=1, validation_split=0.0 )
+    u_net.save( f'{storage_path}/door_mirror_{iteration}.model')
     s_generator.save( model_path )
 
-
 import imageio
-prediction, *_ = generator.predict( test_camera_captured_images, batch_size=batch_size )
+prediction = unet.predict( test_camera_captured_images, batch_size=batch_size )
+prediction = (prediction-np.amin(prediction)) / ( np.amax(prediction) - np.amin(prediction) + 1.0e-10 )
 n, *_ = prediction.shape
 for idx in range( n ):
     imageio.imsave( f'./prediction_{idx}.png', prediction[idx] )
