@@ -16,7 +16,7 @@ A Flutter project to present MCNN as a standalone webpage. Preview available at 
     - replace the image `asset` and `caption` reflecting additional images copied at the first step, (from line 278 to line 366, feel free to add or delete)
     - replace the corresponding urls for the bottom link, if any, (delete the button or leave the link empty if not available)
 4. install and config [flutter](https://flutter.dev/docs/get-started/web) to build a web application, (refer to the `Makefile` for compiliation details)
-5. preview the generated web application and select a proper web sapce to host it.
+5. preview the generated web application and select a proper web sapce to host it. The Generated static website is located at folder `build/web`.
 
 The sourcecode code of [Noise2Atom](https://github.com/fengwang/Noise2Atom/tree/master/noise2atom_webpage/webpage) for your reference. Please file an issue if you have any questions.
 
