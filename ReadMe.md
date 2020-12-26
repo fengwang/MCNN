@@ -1,4 +1,4 @@
-# Multi-scale Convolutional Neural Networks (NCNN)
+# Multi-scale Convolutional Neural Networks (MCNN)
 ---
 
 MCNN extends the functionality of the hidden layers in the decoder of a U-Net by connecting them to additional convolution layers to produce coarse outputs, in attempt to match the low-frequency components.
