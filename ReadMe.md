@@ -1,3 +1,5 @@
+
+
 # Multi-scale Convolutional Neural Networks (MCNN)
 ---
 
@@ -25,7 +27,7 @@ This greatly accelerates the convergence and enhances the stability of the neura
     + scipy (1.3.1)
     + matplotlib (3.1.1)
 
-+ recommanded hardware
++ recommended hardware
     + 2T hard disk space (for simulated dataset)
     + 256 GB Memory
     + 2xGTX 1080 Ti GPU
